@@ -62,6 +62,13 @@ class ProviderChatFireworks(Provider):
     def llm_factory(self):
         return CustomChatFireworks
 
+    # TODO: Remove this when the 'required' validation issue is resolved
+    def transform_tool(self, tool):
+        import copy
+        tool = copy.deepcopy(tool)
+        del tool['required']
+        return tool
+
     def customization_config(self):
         return {
             "verbose": PresetValue(bool),
@@ -72,6 +79,8 @@ class ProviderChatFireworks(Provider):
             "request_timeout": PresetValue(int),
             "n": PresetValue(int, 1, 10),
             "max_tokens": PresetValue(int, include_none=True),
+            "tools": None,
+            "tool_choice": None,
             "model_kwargs": {
                 "top_p": PresetValue(float, min_value=0.0, max_value=1.0),
                 'top_k': PresetValue(int, min_value=1, max_value=40),
