@@ -62,13 +62,6 @@ class ProviderChatFireworks(Provider):
     def llm_factory(self):
         return CustomChatFireworks
 
-    # TODO: Remove this when the 'required' validation issue is resolved
-    def transform_tool(self, tool):
-        import copy
-        tool = copy.deepcopy(tool)
-        del tool['required']
-        return tool
-
     def customization_config(self):
         return {
             "verbose": PresetValue(bool),
