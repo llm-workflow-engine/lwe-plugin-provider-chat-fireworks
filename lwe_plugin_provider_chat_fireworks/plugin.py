@@ -49,7 +49,6 @@ class ProviderChatFireworks(Provider):
         return {
             "chat": True,
             'validate_models': False,
-            "models": self.models,
         }
 
     def prepare_messages_method(self):
