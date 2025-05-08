@@ -1,14 +1,19 @@
 import os
 import requests
+from pydantic import Field
 
 from langchain_fireworks import ChatFireworks
 
 from lwe.core.provider import Provider, PresetValue
 
 FIREWORKS_API_BASE = "https://api.fireworks.ai/inference/v1"
+FIREWORKS_DEFAULT_MODEL = 'accounts/fireworks/models/llama-v3p3-70b-instruct'
 
 
 class CustomChatFireworks(ChatFireworks):
+
+    model_name: str = Field(alias="model", default=FIREWORKS_DEFAULT_MODEL)
+    """Model name to use."""
 
     @property
     def _llm_type(self):
