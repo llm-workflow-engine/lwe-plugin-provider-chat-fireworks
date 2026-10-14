@@ -1,1 +1,0 @@
-langchain-fireworks>=1.2.0

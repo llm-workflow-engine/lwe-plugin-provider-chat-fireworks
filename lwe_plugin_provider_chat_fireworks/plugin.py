@@ -1,13 +1,21 @@
+"""LWE chat fireworks provider integration."""
+
+from __future__ import annotations
+
+from collections.abc import Callable
+from typing import Any
 import os
-import requests
-from pydantic import Field
 
+from langchain_core.messages import BaseMessage
 from langchain_fireworks import ChatFireworks
+from pydantic import Field
+from typing_extensions import override
+import requests
 
-from lwe.core.provider import Provider, PresetValue
+from lwe.core.provider import PresetValue, Provider
 
 FIREWORKS_API_BASE = "https://api.fireworks.ai/inference/v1"
-FIREWORKS_DEFAULT_MODEL = 'accounts/fireworks/models/llama-v3p3-70b-instruct'
+FIREWORKS_DEFAULT_MODEL = "accounts/fireworks/models/llama-v3p3-70b-instruct"
 
 
 class CustomChatFireworks(ChatFireworks):
@@ -16,7 +24,8 @@ class CustomChatFireworks(ChatFireworks):
     """Model name to use."""
 
     @property
-    def _llm_type(self):
+    @override
+    def _llm_type(self) -> str:
         """Return type of llm."""
         return "chat_fireworks"
 
@@ -26,7 +35,7 @@ class ProviderChatFireworks(Provider):
     Access to Fireworks chat models.
     """
 
-    def fetch_models(self):
+    def fetch_models(self) -> dict[str, dict[str, int | None]]:
         models_url = f"{FIREWORKS_API_BASE}/models"
         try:
             headers = {
@@ -37,32 +46,46 @@ class ProviderChatFireworks(Provider):
             response = requests.get(models_url, headers=headers)
             response.raise_for_status()
             models_data = response.json()
-            models_list = models_data.get('data')
+            models_list = models_data.get("data")
             if not models_list:
-                raise ValueError('Could not retrieve models')
-            models = {model['id']: {'max_tokens': model['context_length']} for model in models_list if 'context_length' in model and model['context_length'] and 'supports_chat' in model and model['supports_chat']}
+                raise ValueError("Could not retrieve models")
+            models = {
+                model["id"]: {"max_tokens": model["context_length"]}
+                for model in models_list
+                if "context_length" in model
+                and model["context_length"]
+                and "supports_chat" in model
+                and model["supports_chat"]
+            }
             return models
         except requests.exceptions.RequestException as e:
             raise ValueError(f"Could not retrieve models: {e}")
 
     @property
-    def default_model(self):
+    @override
+    def default_model(self) -> str | None:
         pass
 
     @property
-    def capabilities(self):
+    @override
+    def capabilities(self) -> dict[str, bool]:
         return {
             "chat": True,
-            'validate_models': False,
+            "validate_models": False,
         }
 
-    def prepare_messages_method(self):
+    @override
+    def prepare_messages_method(
+        self,
+    ) -> Callable[[list[dict[str, Any]]], list[BaseMessage]]:
         return self.prepare_messages_for_llm_chat
 
-    def llm_factory(self):
+    @override
+    def llm_factory(self) -> type[CustomChatFireworks]:
         return CustomChatFireworks
 
-    def customization_config(self):
+    @override
+    def customization_config(self) -> dict[str, Any]:
         return {
             "verbose": PresetValue(bool),
             "model_name": PresetValue(str, options=self.available_models),
@@ -76,12 +99,14 @@ class ProviderChatFireworks(Provider):
             "tool_choice": None,
             "model_kwargs": {
                 "top_p": PresetValue(float, min_value=0.0, max_value=1.0),
-                'top_k': PresetValue(int, min_value=1, max_value=40),
+                "top_k": PresetValue(int, min_value=1, max_value=40),
                 "presence_penalty": PresetValue(float, min_value=-2.0, max_value=2.0),
                 "frequency_penalty": PresetValue(float, min_value=-2.0, max_value=2.0),
                 "logit_bias": dict,
                 "logprobs": PresetValue(bool, include_none=True),
-                "top_logprobs": PresetValue(int, min_value=0, max_value=20, include_none=True),
+                "top_logprobs": PresetValue(
+                    int, min_value=0, max_value=20, include_none=True
+                ),
                 "response_format": dict,
                 "stop": PresetValue(str, include_none=True),
                 "user": PresetValue(str),
